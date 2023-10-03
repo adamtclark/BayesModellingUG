@@ -1,0 +1,119 @@
+---
+title: "Bayesian Stats, Meeting 0"
+author: "Adam Clark"
+date: "2023-10-03"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Introduction
+
+I'm very much looking forward to working together this semester in our Bayesian statistics seminar.
+
+Today will just be the "Vorbesprechung" (pre-Semester meeting). For anyone who would has questions about the course or about the semester, we can meet at this link <https://unimeet.uni-graz.at/b/cla-gru-xu4-48a>.
+
+Next week, the plan is to meet as usual at 15.30 in seminar room 32.11 (to floor of Holteigasse 6). No preparation is needed for this meeting, but if possible, please bring a laptop with R already installed.
+
+Just for basic preparation: we will be using this book as a rough guide for the course: <https://www.amazon.de/Richard-Mcelreath/dp/036713991X/ref=mp_s_a_1_1?crid=24ZFNTQV3DKGG&keywords=statistical+rethinking&qid=1696190575&sprefix=statistical%2Caps%2C276&sr=8-1>
+
+You don't need to buy the book, though of course feel free to buy a copy of you want to (versions are also available from the Uni Library). I'll always provide all the material that we need for the course separately, though.
+
+In addition to the book, the author also has a really nice collection of YouTube lectures and code resources available here: <https://github.com/rmcelreath/stat_rethinking_2023#calendar--topical-outline>.
+
+Note, we will roughly be following the course plan that he suggests over the next ten weeks.
+
+Regarding grades: these will be based on small projects at the end of term, ideally meant to include some aspect of your own research. We can work on and present these in the last three meetings in January (which, as you can see on UGO, will also be held online).
+
+For anyone who still has questions, please let me know by email, or we can talk on Tuesday. For everyone else, see you on the 10th!
+
+## Short motivation of the course
+
+You probably have already heard of Bayes' theorem:
+
+$$
+P(A | B) = \frac{P (B | A) P(A)}{P(B)}
+$$
+
+This formula will (at least to some extent) be the central insight that we use to fit and think about complex models in this course. It can be a bit hard to digest, and so often, courses begin by explaining a worked example.
+
+A case that we are by now all sadly familiar with is calculating the probability that you are sick with a disease, given that a test for that disease comes back positive. For COVID antigen tests, for example, we know that the "sensitivity" of the test (the probability that you will test positive if you are sick) is around 80%, and the "specificity" (the probability that you will test negative if you are not sick) is around 1%.
+
+Writing this is terms of the probabilities above, if we define "B" as "testing positive" and "A" as "being sick", we already know:
+
+$$
+P(B|A) = 80\% \\
+P(B|A^C) = 1\%
+$$
+where $A^C$ represents the "complement" of A (i.e. the probability of "not" A). Note that neither of these probabilities are the number that we actually want - i.e. $P(A|B)$, the likelihood that we are sick given that we test positive.
+
+To solve for this probability, we need one more piece of information: P(A) (the probability of being sick). This will vary depending on what fraction of the population actually has COVID. Let's consider two different scenarios: "low", where very few people are sick (just 1% of the population), and "high", where many people are (30%).
+
+Before we try to plug all of this information into the formula, we can try a though experiment. Let's imagine that we have a population of 1000 people. Of these, 1% will be sick in the "low" scenario, and 30% will be sick in the "high" scenario. We can represent these cases in R as:
+
+
+```{r echo=TRUE}
+set.seed(1234) # makes sure we all use the same random seed
+N = 1e3 # fancy way of writing 1000
+low = c(rep(1, N*0.01), rep(0, N*0.99))
+high = c(rep(1, N*0.3), rep(0, N*0.7))
+```
+
+where "1" means that someone is sick, and "0" means that they are healthy. Now, let's imagine that we test everyone in each group. For all the sick people, 80% of them will test positive, whereas for all of the healthy people, 1% will test positive. We can simulate this process in R as follows:
+
+```{r echo=TRUE}
+# make an empty vector for test results
+test_low = numeric(N)
+# 80% chance of positive test given sick
+test_low[low == 1] = rbinom(n = N*0.01, size = 1, prob = 0.8)
+# 1% chance of positive test given healthy
+test_low[low == 0] = rbinom(n = N*0.99, size = 1, prob = 0.01)
+
+# repeat for high
+test_high = numeric(N)
+test_high[high == 1] = rbinom(n = N*0.3, size = 1, prob = 0.8)
+test_high[high == 0] = rbinom(n = N*0.7, size = 1, prob = 0.01)
+```
+
+where 0 represents a negative test result, and 1 a positive test result. Note we use the `rbinom` function, which draws `n` random results from a binomial distribution given probability `prob` with number of trials (e.g. number of "coin flips") `size`.
+
+We can now "read" the results of this random trial in R by writing:
+
+```{r echo=TRUE}
+sum(test_low) # number of positive results in low scenario
+sum(test_high) # number of positive results in high scenario
+```
+
+Obviously, we get more positive test results in the high scenario. BUT, we can also use this result to calcualte the proability that we wanted at the beginning, i.e. P(A|B), the probability that you are sick given that you test positive. To do this, we run:
+
+```{r echo=TRUE}
+sum(test_low[low==1])/sum(test_low)
+sum(test_high[high==1])/sum(test_high)
+```
+
+Notice that in the low scenario, the probability of being sick if you test positive is actually quite low - just around 45%. This is because the false positive rate is roughtly the same as the overall incidence of the disease in the population (so, per person tested, a false positive is just about as likely as it is to be sick in the first place). On the other hand, in the "high" scenario, the false positive rate is just about 0% - that is, almost everyone who tests positive is actually sick.
+
+Finally, we can work this out exatcly with the Bayes formula itself. To do so, we actually need to expand P(B) a bit, since "probability of the test" doesn't really make much sense as a concept. Instead, we break this into two different probabilities:
+
+$$
+P(A | B) = \frac{P (B | A) P(A)}{P(A) P (B|A) + P(A^C) P (B|A^C)} \\
+$$
+Basically, this just breaks P(B) into two different outcomes: the probability of testing positive given that you are sick, and the probability of testing negative if you are not sick (we'll talk more about this logic later, but for now, we can basically think of this as "spanning" the range of possible test outcomes - it is, in effect, our "model" for the test).
+
+Plugging in the terms for the "low" scenario, we have
+
+$$
+P(A | B) =  \frac{0.8 * 0.01}{0.01 * 0.8 + 0.99*0.01} = 0.447...
+$$
+
+and for the "high" scenario, we have:
+
+$$
+P(A | B) =  \frac{0.8 * 0.3}{0.3 * 0.8 + 0.7*0.01} = 0.972...
+$$
+
+Note, these results match what we got from our simulation quite closely. If we were to increase N (you can try this yourself), then we will eventually get numbers very close to the analytical solution.
+
+As we will discuss in the coming weeks, it is often much, much easier to solve these kinds or problems through simulation than it is to solve them analytically (especially given limited data).
