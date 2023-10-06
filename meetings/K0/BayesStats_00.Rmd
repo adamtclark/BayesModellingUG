@@ -13,15 +13,15 @@ knitr::opts_chunk$set(echo = TRUE)
 
 I'm very much looking forward to working together this semester in our Bayesian statistics seminar.
 
-Today will just be the "Vorbesprechung" (pre-Semester meeting). For anyone who would has questions about the course or about the semester, we can meet at this link <https://unimeet.uni-graz.at/b/cla-gru-xu4-48a>.
+Today will just be the "Vorbesprechung" (pre-Semester meeting). For anyone who would has questions about the course or about the semester, we can meet at this [link](https://unimeet.uni-graz.at/b/cla-gru-xu4-48a).
 
 Next week, the plan is to meet as usual at 15.30 in seminar room 32.11 (to floor of Holteigasse 6). No preparation is needed for this meeting, but if possible, please bring a laptop with R already installed.
 
-Just for basic preparation: we will be using this book as a rough guide for the course: <https://www.amazon.de/Richard-Mcelreath/dp/036713991X/ref=mp_s_a_1_1?crid=24ZFNTQV3DKGG&keywords=statistical+rethinking&qid=1696190575&sprefix=statistical%2Caps%2C276&sr=8-1>
+Just for basic preparation: we will be using [this](https://www.amazon.de/Richard-Mcelreath/dp/036713991X/ref=mp_s_a_1_1?crid=24ZFNTQV3DKGG&keywords=statistical+rethinking&qid=1696190575&sprefix=statistical%2Caps%2C276&sr=8-1) book as a rough guide for the course.
 
 You don't need to buy the book, though of course feel free to buy a copy of you want to (versions are also available from the Uni Library). I'll always provide all the material that we need for the course separately, though.
 
-In addition to the book, the author also has a really nice collection of YouTube lectures and code resources available here: <https://github.com/rmcelreath/stat_rethinking_2023#calendar--topical-outline>.
+In addition to the book, the author also has a really nice collection of YouTube lectures and code resources available [here](https://github.com/rmcelreath/stat_rethinking_2023#calendar--topical-outline).
 
 Note, we will roughly be following the course plan that he suggests over the next ten weeks.
 
@@ -86,16 +86,16 @@ sum(test_low) # number of positive results in low scenario
 sum(test_high) # number of positive results in high scenario
 ```
 
-Obviously, we get more positive test results in the high scenario. BUT, we can also use this result to calcualte the proability that we wanted at the beginning, i.e. P(A|B), the probability that you are sick given that you test positive. To do this, we run:
+Obviously, we get more positive test results in the high scenario. BUT, we can also use this result to calculate the probability that we wanted at the beginning, i.e. P(A|B), the probability that you are sick given that you test positive. To do this, we run:
 
 ```{r echo=TRUE}
 sum(test_low[low==1])/sum(test_low)
 sum(test_high[high==1])/sum(test_high)
 ```
 
-Notice that in the low scenario, the probability of being sick if you test positive is actually quite low - just around 45%. This is because the false positive rate is roughtly the same as the overall incidence of the disease in the population (so, per person tested, a false positive is just about as likely as it is to be sick in the first place). On the other hand, in the "high" scenario, the false positive rate is just about 0% - that is, almost everyone who tests positive is actually sick.
+Notice that in the low scenario, the probability of being sick if you test positive is actually quite low - just around 45%. This is because the false positive rate is roughly the same as the overall incidence of the disease in the population (so, per person tested, a false positive is just about as likely as it is to be sick in the first place). On the other hand, in the "high" scenario, the false positive rate is just about 0% - that is, almost everyone who tests positive is actually sick.
 
-Finally, we can work this out exatcly with the Bayes formula itself. To do so, we actually need to expand P(B) a bit, since "probability of the test" doesn't really make much sense as a concept. Instead, we break this into two different probabilities:
+Finally, we can work this out exactly with the Bayes formula itself. To do so, we actually need to expand P(B) a bit, since "probability of the test" doesn't really make much sense as a concept. Instead, we break this into two different probabilities:
 
 $$
 P(A | B) = \frac{P (B | A) P(A)}{P(A) P (B|A) + P(A^C) P (B|A^C)} \\

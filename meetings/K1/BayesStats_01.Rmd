@@ -1,0 +1,328 @@
+---
+title: "Bayesian Stats, Meeting 1"
+author: "Adam Clark"
+date: "2023-10-10"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Introduction
+
+Today, we will be covering topics roughly related to chapters 1-3 of the McElreath book. This will include a simple example of binomial data and model fitting, as well as a general discussion of visualizing and working with probability density functions.
+
+## Binomial example: tossing a globe
+
+Binomial distributions describe outcomes of trials that can have only one of two outcomes (e.g. "true vs false", "1 vs 0", "heads vs. tails", etc.). A single random draw of such a variable is called a Bernoulli trial (e.g. a single coin flip), whereas Binomial trials involve a string of several Bernoulli trials.
+
+We are going to begin with a simple example of a Bernoulli trial - rolling a globe to select a random part of the world, and categorizing the resulting site as either water (W) or land (L).
+
+We can simulate this task in R. To do so, we first need to load a few R packages, and then write a function for globe tossing
+
+```{r echo=TRUE, fig.show='hide', results='hide', message=FALSE}
+# plot globe
+library(globe)
+library(sf)
+library(spData) ## For `world`, an sf MULTIPOLYGON object
+
+#globeearth(eye=list(runif(1,-80,80),runif(1,-180,180)))
+
+## Create an sf POINTS object
+set.seed(0)
+lat <- runif(10, -70, 70)
+lon <- runif(10, -180, 180)
+#points <- expand.grid(lon, lat)  # Note that I reversed OP's ordering of lat/long
+points <- data.frame(lon,lat)
+pts <- st_as_sf(points, coords=1:2, crs=4326)
+
+## Find which points fall over land
+ii <- !is.na(as.numeric(st_intersects(pts, world)))
+
+# function to sample from globe and return whether water or land
+# returns TRUE for water
+globe_toss <- function(plot=FALSE) {
+  lat <- runif(1,-70,70)
+  lon <- runif(1,-180,180)
+  pts <- st_as_sf( data.frame(lon,lat) , coords=1:2, crs=4326)
+  if ( plot==TRUE ) globeearth(eye=list(lat,lon))
+  return( c(lat,lon, is.na(as.numeric(st_intersects(pts, world))) ) )
+}
+```
+
+We can now "toss" the globe, and look at the result:
+
+```{r echo=TRUE}
+globe_toss(plot = TRUE)
+```
+
+The function returns the latitude and longitude of the site chosen, returns 1 for "land" and 2 for "water", and (if plot = TRUE), shows us a picture of the globe centered at the chosen spot.
+
+If we want to run multiple trials and track the results, we can try running the function within a loop.
+
+```{r echo=TRUE}
+water = 0 # number of water samples
+land = 0 # number of land samples
+
+for(n in 1:100) { # loop 100 times
+  toss_result = globe_toss(plot = FALSE) # toss the globe
+  if(toss_result[3]==1) { # record result
+    water = water+1
+  } else {
+    land = land+1
+  }
+}
+
+print(c(water, land)/(water+land))
+```
+
+Looks like we end up with about 75% water and about 25% land (as expected). But let's imagine that we want to find a more efficient way of estimating these values, without needing to toss the globe 100 times.
+
+Let's begin by making a "grid" approximation for quantity "p": the fraction of the globe covered by water. Let's start by setting up a grid of 20 values going from 0 to 20:
+
+```{r echo=TRUE}
+p_grid <- seq( from=0 , to=1 , length.out=20 )
+p_grid
+```
+
+You'll see that this is just a vector of numbers, breaking up the possible values that w might take on. Each of these numbers represents the parameter for a simple "model" that we can use to try to predict the likelihood of an observation given an assumed value for p. For example, let's try tossing the globe just ten times.
+
+```{r echo=TRUE}
+set.seed(4321) # make sure we all get the same string of random numbers
+
+water = 0 # number of water samples
+for(n in 1:10) { # loop 100 times
+  toss_result = globe_toss(plot = FALSE) # toss the globe
+  if(toss_result[3]==1) { # record result
+    water = water+1
+  }
+}
+
+water
+```
+
+So, our estimate for the fraction of the globe covered in water based on these 10 samples is about 6/10. We can now use the grid of values to calculate the likelihood of this outcome given each of the assumed values for p.
+
+```{r echo=TRUE}
+# compute likelihood at each value in grid
+likelihood <- dbinom( water , size=n , prob=p_grid )
+
+plot( p_grid , likelihood , type="b" ,
+      xlab="probability of water" , ylab="likelihood of data given p" )
+mtext( "20 points, based on 10 draws" )
+
+abline(v = 6/10, lty = 2) # draw a vertical dashed line at p = 6/10
+abline(v = 0.75, lty = 3) # draw a vertical dotted line at the "true" value of 75%
+```
+
+The height of the distribution shows the relative likelihood of the data we observed (6/10 tosses finding water) given each of the values for p on the horizontal axis. You'll notice that the "most likely" value here is 0.6 - i.e. a value for p corresponding exactly to the 6/10 that we observed.
+
+This value would be our standard "frequentist" result in a standard statistical analysis. And it's not too bad - it is pretty close to the true value of 0.75, after all. But, we can definitely do better be incorporating "prior" information that we already know about the world.
+
+First, let's create something known as a "flat" prior - i.e. one that tells us that any value for p is equally likely based on our prior knowledge. To do this, we just say that the relative likelihood of each of the 20 points is 1/20. We can then multiply the likelihood of each p value under the prior by the likelihood of our observation given the model in order to generate a "posterior" - this is our Bayesian estimate of the likelihood of our model given the data.
+
+```{r echo=TRUE}
+prior_flat <- rep( 1/20 , 20 )
+unstd.posterior <- likelihood * prior_flat
+
+plot( p_grid , unstd.posterior , type="b" ,
+      xlab="probability of water" , ylab="posterior" )
+mtext( "20 points, based on 10 draws" )
+
+abline(v = 6/10, lty = 2) # draw a vertical dashed line at p = 6/10
+abline(v = 0.75, lty = 3) # draw a vertical dotted line at the "true" value of 75%
+```
+
+One minor note - technically, we would actually need to standardize these values by the marginal likelihood, as discussed on page 37 of the MacElreath book. But for all practical purposes, we don't usually do this, since we are just looking for some parameter set that maximizes the value of the posterior, and don't really care much about what the likelihood actually is.
+
+In any case, you'll see that with a flat prior, nothing has changed - the distribution looks pretty much the same as before (except that the values are all a bit smaller, since we didn't standardize by marginal likelihoods).
+
+But now, let's try using an informative prior. Let's pretend we remember very little from our geography classes in school, but we are pretty confident that the "true" value is somewhere between 60% and 90%. Let's say we're twice as confident that it's one of these values than we are that it's any other value. We can use this assumption to make an "informative" prior, and plot the result:
+
+```{r echo=TRUE}
+prior_informative <- rep( 1 , 20 )
+prior_informative[p_grid >= 0.6 & p_grid <= 0.9] = 2
+prior_informative = prior_informative/sum(prior_informative) # standardize to sum to 1
+unstd.posterior_inform <- likelihood * prior_informative
+
+matplot( p_grid , cbind(unstd.posterior, unstd.posterior_inform) , type="b" , pch = 1:2,
+      xlab="probability of water" , ylab="posterior")
+mtext( "20 points, based on 10 draws" )
+
+legend("topleft", c("flat", "informative"), col = 1:2, pch = 1:2)
+
+abline(v = 6/10, lty = 2) # draw a vertical dashed line at p = 6/10
+abline(v = 0.75, lty = 3) # draw a vertical dotted line at the "true" value of 75%
+```
+
+By adding in our informative prior, we've managed to "nudge" our estimate closer to the true value! It's not perfect, and our data still drag the posterior down towards 6/10, but it is an improvement. And if we were to use an even more restrictive prior (e.g. using a narrower range of values, or saying that we are 3 or 4 times more confident for values within that range than for values outside of it), then we can get even closer. For example:
+
+```{r echo=TRUE}
+prior_informative <- rep( 1 , 20 )
+prior_informative[p_grid >= 0.65 & p_grid <= 0.85] = 3
+prior_informative = prior_informative/sum(prior_informative) # standardize to sum to 1
+unstd.posterior_inform <- likelihood * prior_informative
+
+matplot( p_grid , cbind(unstd.posterior, unstd.posterior_inform) , type="b" , pch = 1:2,
+      xlab="probability of water" , ylab="posterior")
+mtext( "20 points, based on 10 draws" )
+
+legend("topleft", c("flat", "informative"), col = 1:2, pch = 1:2)
+
+abline(v = 6/10, lty = 2) # draw a vertical dashed line at p = 6/10
+abline(v = 0.75, lty = 3) # draw a vertical dotted line at the "true" value of 75%
+```
+
+Though remember, this "improvement" only works so long as our informative prior represents a valid interpretation of the real world. If we were to have handed the model a poorly defined range of values for the prior, then we would end up with a worse estimate because of it, not a better one. For example:
+
+```{r echo=TRUE}
+prior_informative <- rep( 1 , 20 )
+prior_informative[p_grid >= 0.4 & p_grid <= 0.5] = 3
+prior_informative = prior_informative/sum(prior_informative) # standardize to sum to 1
+unstd.posterior_inform <- likelihood * prior_informative
+
+matplot( p_grid , cbind(unstd.posterior, unstd.posterior_inform) , type="b" , pch = 1:2,
+      xlab="probability of water" , ylab="posterior")
+mtext( "20 points, based on 10 draws" )
+
+legend("topleft", c("flat", "informative"), col = 1:2, pch = 1:2)
+
+abline(v = 6/10, lty = 2) # draw a vertical dashed line at p = 6/10
+abline(v = 0.75, lty = 3) # draw a vertical dotted line at the "true" value of 75%
+```
+
+## Quadratic approximations
+
+In many cases, it won't be practical to calculate posterior distributions using a grid of input values. As a simple example of how we might go about working with more complex data, we can apply the "quadratic" approximation functions from the rethinking package (these use normal distributions to approximate more complex distributions, and work surprisingly well under many circumstances).
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+require(rethinking)
+
+W = 6; L = 4
+
+globe.qa <- quap(
+  alist(
+    W ~ dbinom(W+L, p), # binomial likelihood
+    p ~ dunif(0, 1) # uniform prior
+  ),
+  data = list(W = W, L = L) # data from flipping 10 globes, above
+)
+
+# display summary of output
+precis(globe.qa)
+```
+
+This output tells us the mean estimate of the probability of landing on water, as well as an estimate of the standard deviation (based on a Gaussian distribution), and the 95% confidence interval (or rather, "credibility interval", since we are working with Bayesian inference).
+
+We can also plot the resulting distributions of the "true" binomial data against our Gaussian approximation:
+
+```{r echo=TRUE}
+curve(dbeta(x, W+1, L+1)) # this is the "conjugate" of the Bernoulli distribution
+curve(dnorm(x, precis(globe.qa)$mean, precis(globe.qa)$sd), lty = 2, add = TRUE)
+```
+
+Don't worry too much about the conjugate distribution here - this is basically an analytical way to calculate the shape of the posterior distribution. This used to be very important in Bayesian statistics, but these days, since we usually solve for posteriors computationally, we don't really do a lot of analytical work with conjugate distributions in everyday calculations.
+
+The main point is to note that the normal distribution (dotted line) gives us an approximation that is very close to the "real" distribution. This is a fast and dirty way to solve many problems. Some methods, e.g. the INLA package in R, takes this approach to the extreme using something called "Laplace approximation", which works for many kinds of problems and is often much, much faster than other common approaches (e.g. MCMC).
+
+For now, though, let's just play a bit with the example above: What happens when I change W and L? How about when I change the prior?
+
+## Interactive task: heights and priors
+
+Now, let's try to apply what we just learned in order to estimate heights for a group of humans (for this exercise, we can either use your height, or the height of your favorite celebrity - your choice).
+
+First, let's start with a flat prior. According to Wikipedia, the shortest and tallest adult humans ever recorded had heights that fell roughly between 50 cm and 280 cm. We can use these to set the limits of our flat prior. In effect, we are stating that we are sure that there is a 100% chance that every height in our sample will fall somewhere within this range, and a 0% chance that it will fall outside of it. Thus, this is an "informative" prior, even though it is flat.
+
+```{r echo=TRUE}
+h_grid <- seq( from=50 , to=280 , by=10 )
+prior_flat <- rep(1/length(h_grid), length(h_grid))
+```
+
+Now, let's see if we can come up with a more informative prior, by taking advantage of our existing knowledge about human heights. What do we, as a group think are the mean and standard deviation of heights that would describe the variation that we'd expect? We can use these to update the flat prior based on the standard normal density function. Recall that the standard deviation roughly describes the average distance between the mean value for a population, and the value observed in a single random sample taken from that population.
+
+```{r echo=TRUE}
+# my guesses below - we can update these in class
+height_mean_prior = 170
+height_std_prior = 30
+prior_informative = dnorm(h_grid, mean = height_mean_prior, sd = height_std_prior)
+
+plot( h_grid , prior_informative , type="b" ,
+      xlab="height in cm" , ylab="probability density (prior)" )
+```
+
+Two minor notes - first, the probability density function describes the relative likelihood that a continuous variable will take on a particular value. The actual probability of such an event is formally zero, since continuous variables can take on infinitely many values - and so instead, we usually summarize probabilities for continuous variables in terms of a band of possible outcomes (e.g. "the probability that the height will fall between 150 and 160 cm"). However, the densities themselves are still helpful for optimization and mathematical comparisons. If you'd like to learn more about these kinds of functions, see the fantastic videos by the YouTube creator "Three Blue One Brown" here: [part 1](https://www.youtube.com/watch?v=8idr1WZ1A7Q); [part 2](https://www.youtube.com/watch?v=ZA4JkHKZM50&t=1s).
+
+Second, note that the probability drops off *very* quickly around the mean. This is a property of normal distributions - and often, we would instead choose to use a distribution with fatter tails, e.g. Student's T distribution. But for this particular exercise, the normal distribution should suffice.
+
+Now, let's go ahead and get ourselves a list of heights. Remember, these can either be your height, or the height of your favorite celebrity. Below, I've put in some fake heights - we can replace these with real data in class.
+
+```{r echo=TRUE}
+height_data = c(151, 187, 183, 176, 188, 172, 156, 187, 185, 184)
+```
+
+We could of course directly calculate the true mean for this dataset - but more informative for our purposes is to show how the distance between our guess of the mean vs. the true mean depends on the number of samples that we compare. By definition, we know that once we've sampled the full set of heights in this vector, we'll have perfectly guessed the "true" mean. But, for any smaller sub-sample of the population, we will be slightly off. We can show that relationship using the function below:
+
+```{r echo=TRUE}
+mean_true = mean(height_data) # true mean
+mean_est = numeric(length(height_data)) # vector for storing estimates
+
+for(i in 1:length(height_data)) {
+  mean_est[i] = mean(height_data[1:i])
+}
+
+plot(mean_est, xlab = "Sample Size", ylab = "Estimate", type = "b")
+abline(h = mean_true, lty = 3)
+```
+
+How many samples does it take before we get close to the "true" mean value (shown as a horizontal dotted line)?
+
+Now, let's try repeating the analysis after incorporating information from our prior. To formally calculate likelihoods, we'd need to estimate values for both the true mean and true standard deviation for heights in the population, but to keep things simple, we will go ahead and use the prior standard deviation to calculate likelihoods.
+
+```{r echo=TRUE}
+mean_est_prior = numeric(length(height_data)) # vector for storing estimates
+
+for(i in 1:length(height_data)) {
+  likelihood = dnorm(mean_est[i], mean = h_grid, sd = height_std_prior/(sqrt(i))) # get likelihood of the data given each height class (after standardizing by sample size)
+  unstd.posterior = likelihood*prior_informative # calculate posterior
+  posterior = unstd.posterior/sum(unstd.posterior) # standardize to sum to one
+  
+  mean_est_prior[i] = sum(posterior*h_grid) # weighted average
+}
+
+matplot(cbind(mean_est, mean_est_prior), xlab = "Sample Size", ylab = "Estimate", type = "b", pch = 1:2, col = 1:2)
+abline(h = mean_true, lty = 3)
+
+legend("bottomright", c("raw data", "informative prior"), pch = 1:2, col = 1:2)
+```
+
+What is the impact on our ability to predict height? For what sample sizes does the prior improve our predictions? What assumptions are we making in applying this analysis?
+
+## Stats review: standard error vs. standard deviation
+
+Note that when calculating the likelihood in the example above, we had to divide by the square root of the sample size. This was because we were trying to calculate the standard deviation of the *mean* of a particular sample (i.e. the "standard error of the mean"), rather than the standard deviation of individual samples.
+
+Below is a little code example that we can use to compare these quantities:
+
+```{r echo=TRUE}
+n = 100 # sample size
+random_data = rnorm(n, mean = 3, sd = 2) #random normally distributed data
+
+sd(random_data) # standard deviation
+
+# standard error: mean of k samples drawn from the full population
+k = 10 # sub-sample size
+niter = 1000 # number of random iterations
+mean_values = numeric(niter) # save mean values
+for(i in 1:niter) {
+  # take a random sample
+  tmp_sample = sample(random_data, size = k, replace = FALSE)
+  mean_values[i] = mean(tmp_sample)
+}
+
+sd(mean_values) # simulation-based estimate of standard error
+sd(random_data)/sqrt(k) # analytical formula
+```
+
+Note, these are very close. Formally, we'd actually need to use a slightly more complex formula (since n is finite, and the formula for standard error used above is for infinite population sizes), but so long as n >> k it should work fine.
+

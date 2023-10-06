@@ -363,19 +363,19 @@ display: none;
 our Bayesian statistics seminar.</p>
 <p>Today will just be the “Vorbesprechung” (pre-Semester meeting). For
 anyone who would has questions about the course or about the semester,
-we can meet at this link <a href="https://unimeet.uni-graz.at/b/cla-gru-xu4-48a" class="uri">https://unimeet.uni-graz.at/b/cla-gru-xu4-48a</a>.</p>
+we can meet at this <a href="https://unimeet.uni-graz.at/b/cla-gru-xu4-48a">link</a>.</p>
 <p>Next week, the plan is to meet as usual at 15.30 in seminar room
 32.11 (to floor of Holteigasse 6). No preparation is needed for this
 meeting, but if possible, please bring a laptop with R already
 installed.</p>
-<p>Just for basic preparation: we will be using this book as a rough
-guide for the course: <a href="https://www.amazon.de/Richard-Mcelreath/dp/036713991X/ref=mp_s_a_1_1?crid=24ZFNTQV3DKGG&amp;keywords=statistical+rethinking&amp;qid=1696190575&amp;sprefix=statistical%2Caps%2C276&amp;sr=8-1" class="uri">https://www.amazon.de/Richard-Mcelreath/dp/036713991X/ref=mp_s_a_1_1?crid=24ZFNTQV3DKGG&amp;keywords=statistical+rethinking&amp;qid=1696190575&amp;sprefix=statistical%2Caps%2C276&amp;sr=8-1</a></p>
+<p>Just for basic preparation: we will be using <a href="https://www.amazon.de/Richard-Mcelreath/dp/036713991X/ref=mp_s_a_1_1?crid=24ZFNTQV3DKGG&amp;keywords=statistical+rethinking&amp;qid=1696190575&amp;sprefix=statistical%2Caps%2C276&amp;sr=8-1">this</a>
+book as a rough guide for the course.</p>
 <p>You don’t need to buy the book, though of course feel free to buy a
 copy of you want to (versions are also available from the Uni Library).
 I’ll always provide all the material that we need for the course
 separately, though.</p>
 <p>In addition to the book, the author also has a really nice collection
-of YouTube lectures and code resources available here: <a href="https://github.com/rmcelreath/stat_rethinking_2023#calendar--topical-outline" class="uri">https://github.com/rmcelreath/stat_rethinking_2023#calendar--topical-outline</a>.</p>
+of YouTube lectures and code resources available <a href="https://github.com/rmcelreath/stat_rethinking_2023#calendar--topical-outline">here</a>.</p>
 <p>Note, we will roughly be following the course plan that he suggests
 over the next ten weeks.</p>
 <p>Regarding grades: these will be based on small projects at the end of
@@ -453,7 +453,7 @@ writing:</p>
 <pre class="r"><code>sum(test_high) # number of positive results in high scenario</code></pre>
 <pre><code>## [1] 251</code></pre>
 <p>Obviously, we get more positive test results in the high scenario.
-BUT, we can also use this result to calcualte the proability that we
+BUT, we can also use this result to calculate the probability that we
 wanted at the beginning, i.e. P(A|B), the probability that you are sick
 given that you test positive. To do this, we run:</p>
 <pre class="r"><code>sum(test_low[low==1])/sum(test_low)</code></pre>
@@ -462,13 +462,13 @@ given that you test positive. To do this, we run:</p>
 <pre><code>## [1] 0.9760956</code></pre>
 <p>Notice that in the low scenario, the probability of being sick if you
 test positive is actually quite low - just around 45%. This is because
-the false positive rate is roughtly the same as the overall incidence of
+the false positive rate is roughly the same as the overall incidence of
 the disease in the population (so, per person tested, a false positive
 is just about as likely as it is to be sick in the first place). On the
 other hand, in the “high” scenario, the false positive rate is just
 about 0% - that is, almost everyone who tests positive is actually
 sick.</p>
-<p>Finally, we can work this out exatcly with the Bayes formula itself.
+<p>Finally, we can work this out exactly with the Bayes formula itself.
 To do so, we actually need to expand P(B) a bit, since “probability of
 the test” doesn’t really make much sense as a concept. Instead, we break
 this into two different probabilities:</p>
