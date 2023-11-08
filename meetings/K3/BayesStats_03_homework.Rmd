@@ -1,0 +1,23 @@
+---
+title: "Bayesian Stats, Meeting 3 Homework"
+author: "Adam Clark"
+date: "2023-07-11"
+output: html_document
+---
+
+## Homework problem:
+
+Try analysing the following dataset using the `lme` function.
+
+```{r echo=TRUE}
+bdat = read.csv("dataset_1.csv")
+n_blocks = length(unique(bdat$block))
+
+# plot
+par(mar=c(4,4,2,2))
+plot(biomass~diversity, col = rainbow(n_blocks)[bdat$block], data = bdat)
+```
+
+What form of regression should you use? Random slopes? Random intercepts? Something else?
+  
+What do the results of the regression show us? What are the fixed and random effects estimates? What is the variability across parameters?

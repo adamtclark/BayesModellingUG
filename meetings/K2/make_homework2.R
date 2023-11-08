@@ -1,5 +1,5 @@
 # make data for example analysis 1
-set.seed(231011)
+set.seed(231107)
 n_blocks = 10
 
 intercepts = rnorm(n_blocks, 14, 7)
