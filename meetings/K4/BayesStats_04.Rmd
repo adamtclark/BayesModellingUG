@@ -17,8 +17,8 @@ require(nlme)
 # Nested data example
 set.seed(231011) # seed for analyses
 error = 10 # residual error
-n_plots = 100 # number of plots
-n_subplots = 10 # subplots per block
+n_plots = 30 # number of plots
+n_subplots = 6 # subplots per block
 intercepts_plots = sort(rnorm(n_plots, mean = 200, sd = 40)) # y-intercepts for each plot
 
 intercepts_subplots = matrix(nrow = n_plots, ncol = n_subplots)
