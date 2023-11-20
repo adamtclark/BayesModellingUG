@@ -5,7 +5,7 @@ date: "2023-07-11"
 output: html_document
 ---
   
-setwd("~/Dropbox/Teaching/Graz/BayesStats/BayesModellingUG/meetings/K5")
+```{r echo=TRUE}
 d = read.csv("e120_data.csv")
 
 head(d)
@@ -35,7 +35,7 @@ anova(m4_3, m4_4) # significant improvement
 
 
 # nested random effects
-m4_5 = lmer(log(AbvBio)~NumSp+(1|Plot/Year), data = d)
+#m4_5 = lmer(log(AbvBio)~NumSp+(1|Plot/Year), data = d)
 # doesn't converge: too few observations
 
 # crossed random effects
@@ -105,4 +105,4 @@ p6 = prior(normal(0,2), class = b, coef = NumSp)
 mb_6 = brm(AbvBio~NumSp+(1|Plot), data = d, family = "gamma", prior = p6)
 summary(mb_6)
 plot(mb_6)
-
+```
