@@ -1,10 +1,3 @@
----
-title: "Bayesian Stats, Meeting 5"
-author: "Adam Clark"
-date: "2023-07-11"
-output: html_document
----
-  
 setwd("~/Dropbox/Teaching/Graz/BayesStats/BayesModellingUG/meetings/K5")
 d = read.csv("e120_data.csv")
 
@@ -15,8 +8,12 @@ head(d)
 require(lme4)
 
 # fitting a simple model with plot as random effect
+#require(nlme)
+#mnlme = lme(AbvBio~NumSp, data = d, random = ~ 1|Plot)
+
 m4_1 = lmer(AbvBio~NumSp+(1|Plot), data = d)
 summary(m4_1)
+#summary(mnlme)
 
 # no p-values for fixed effects! need to test these via ANOVA
 m4_2 = lmer(AbvBio~1+(1|Plot), data = d)
@@ -33,7 +30,6 @@ plot(m4_3) # better
 m4_4 = lmer(log(AbvBio)~1+(1|Plot), data = d)
 anova(m4_3, m4_4) # significant improvement
 
-
 # nested random effects
 m4_5 = lmer(log(AbvBio)~NumSp+(1|Plot/Year), data = d)
 # doesn't converge: too few observations
@@ -43,7 +39,7 @@ m4_5 = lmer(log(AbvBio)~NumSp+(1|Plot) + (1|Year), data = d)
 # simpler form, but assumes that year effects don't vary by plot (and/or that plot effects don't vary by year)
 summary(m4_5)
 plot(m4_5)
-anova(m4_4, m4_5) # significant improvement
+anova(m4_3, m4_5) # significant improvement
 
 ranef(m4_5)
 coef(m4_5) # somewhat easier format for random effects - don't need to add to fixed effects
@@ -101,8 +97,8 @@ plot(mb_5b)
 fixef(mb_5b)
 
 # add explicit priors
-p6 = prior(normal(0,2), class = b, coef = NumSp)
-mb_6 = brm(AbvBio~NumSp+(1|Plot), data = d, family = "gamma", prior = p6)
+p6 = prior(normal(0,1), class = b, coef = NumSp)
+mb_6 = brm(AbvBio~NumSp+(1|Plot), data = d[d$Plot %in% c(2,3,5,6,9),], family = "gamma", prior = p6)
 summary(mb_6)
 plot(mb_6)
 
