@@ -388,3 +388,47 @@ However, we can also work on other problems or methods that you'd like to discus
 
 Remember that next week is our last meeting before Christmas break. Our meetings in January will be online (though if I am back early enough, I'll try to also have an in-person option available). The point of these meetings is to help you carry out an analysis using the methods that we've discussed in this course, which you need to turn in as your "final assignment" for the class.
 
+### Bonus number two: Correlated predictors
+
+Below is the code from the case that we discussed at the end of class -- i.e. on why optimisers like MCMC tend to give you more honest estimates of paramter values and their uncertainty. If we simulate a case with two correlated variables $X$ and $Z$, and then try to estimate their effect on variable $Y$, we find that the standard lm function underestaimtes the uncertainty in parameter values -- but if we apply boostrapping, we get fatter intervals that account for the added uncertainty caused by the covariance.
+
+```{r echo=TRUE, message=FALSE, fig.width=5, fig.height=4}
+n = 100
+X = rnorm(n)
+Z = rnorm(n)+X
+
+plot(X,Z)
+Y = rnorm(n)+X^2-Z^2
+plot(Y~Z)
+
+mod = lm(Y ~ X+Z)
+summary(mod)
+
+niter = 1000
+boot_summary = matrix(nrow = niter, ncol = 2)
+colnames(boot_summary) = c("bX", "bZ")
+
+for(i in 1:niter) {
+  ps = sample(n, rep = T)
+  mod_boot = lm(Y[ps] ~ X[ps]+Z[ps])
+  boot_summary[i,] = unname(c(coef(mod_boot)[2:3]))
+}
+
+# note the correlation among model terms - i.e.
+# when the slope for X is steep, the slope for Y isn't.
+plot(boot_summary)
+
+mod_boot = lm(bZ~bX, data = data.frame(boot_summary))
+summary(mod_boot)
+abline(mod_boot)
+
+# note, the uncertainty estimates are much higher in the
+# bootstrapped estimates, since these are (better) accounting
+# for the covariance between 
+apply(boot_summary, 2, mean)
+apply(boot_summary, 2, sd)
+
+summary(mod)
+```
+
+As noted by Manuele (this was news to me), the "standard" method for calculating standard errors for parameter estimates in OLS, and as it is implemented in lm, actually does deal with impacts of covariance, so long as the model is fully linear. E.g. if you take the example above and simplify the function for $Y$ to make it linear (i.e. $Y = X+Z$), then the standard error estimates from bootstrapping and from the lm function are identical.
