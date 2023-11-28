@@ -100,7 +100,7 @@ Zs = sample(x = dat$Z, niter, rep = TRUE)
 # simulate Y for hypothetical cases with X = 0
 DY0 = with(post, rnorm(niter, a+bX*0+bZ*Zs, sigma))
 
-# simulate X for hypothetical case where Y = 1 (1 std, since units are standardised)
+# simulate Y for hypothetical case where X = 1 (1 std, since units are standardised)
 # but using the same Z values
 DY1 = with(post, rnorm(niter, a+bX*1+bZ*Zs, sigma))
 
@@ -329,7 +329,7 @@ n = 100
 X = rep(c(0,1), each = n/2) # fungicide - 1 = yes, 2 = no
 Z = rnorm(n, mean = 2) - X # fungus: negative effect of fungicide on fungus
 Y = rnorm(n, mean = 5) - 0.8*Z # plant: negative effect of fungus on plant
-A = rnorm(n, mean = 2) - 0.5*Z # ladybug: is negatively impacted by fungicide, but doesn't hurt plants
+A = rnorm(n, mean = 2) - 0.5*Z # ladybug: is negatively impacted by fungus, but doesn't hurt plants
 
 # make the AVP, conditioning on A
 mod_D_XA = lm(X ~ A)
@@ -344,7 +344,7 @@ summary(mod_D_AVP_XY)
 abline(mod_D_AVP_XY)
 ```
 
-we find that like $Z$, it removes the association between fungicide and plant growth, even though we are only conditioning on ladybug abundance. This is a very, very common problem in multiple regression -- i.e. we very often end up with things that are correlated with other variables in our models. And so, you really need to think very hard about what variables to include in your regression, what to control for, and what to leave out.
+we find that like $Z$, it removes (some of) the association between fungicide and plant growth, even though we are only conditioning on ladybug abundance. This is a very, very common problem in multiple regression -- i.e. we very often end up with things that are correlated with other variables in our models. And so, you really need to think very hard about what variables to include in your regression, what to control for, and what to leave out.
 
 ### Bonus: Model misspecification
 

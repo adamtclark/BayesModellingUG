@@ -4,6 +4,8 @@ author: "Adam Clark"
 date: "2023-07-11"
 output: html_document
 ---
+
+This exercises this week really lend themselves better to playing with an R script together than to working through an .html file (we get lots of plots and long read-outs that are hard to present here). So, my suggestion is to ignore this page, and instead focus on the R script linked in the website (and available (here)[https://github.com/adamtclark/BayesModellingUG/blob/main/meetings/K5/analyse_e120.R]).
   
 ```{r echo=TRUE}
 d = read.csv("e120_data.csv")
