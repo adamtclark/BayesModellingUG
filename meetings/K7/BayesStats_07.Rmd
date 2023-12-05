@@ -1,0 +1,179 @@
+---
+title: "Bayesian Stats, Meeting 7"
+author: "Adam Clark"
+date: "2023-05-12"
+output: html_document
+---
+
+### Correlated predictors
+
+Below is the code from the case that we discussed at the end of last class -- i.e. on why optimisers like MCMC tend to give you more honest estimates of paramter values and their uncertainty. If we simulate a case with two correlated variables $X$ and $Z$, and then try to estimate their effect on variable $Y$, we find that the standard lm function underestaimtes the uncertainty in parameter values -- but if we apply boostrapping, we get fatter intervals that account for the added uncertainty caused by the covariance.
+
+```{r echo=TRUE, message=FALSE, fig.width=5, fig.height=4}
+set.seed(123123)
+n = 100
+X = rnorm(n)
+Z = rnorm(n)+X
+
+plot(X,Z)
+Y = rnorm(n)+X^2-Z^2
+plot(Y~Z)
+
+mod = lm(Y ~ X+Z)
+summary(mod)
+
+niter = 1000
+boot_summary = matrix(nrow = niter, ncol = 2)
+colnames(boot_summary) = c("bX", "bZ")
+
+for(i in 1:niter) {
+  ps = sample(n, rep = T)
+  mod_boot = lm(Y[ps] ~ X[ps]+Z[ps])
+  boot_summary[i,] = unname(c(coef(mod_boot)[2:3]))
+}
+
+# note the correlation among model terms - i.e.
+# when the slope for X is steep, the slope for Y isn't.
+plot(boot_summary)
+
+mod_boot = lm(bZ~bX, data = data.frame(boot_summary))
+summary(mod_boot)
+abline(mod_boot)
+
+# note, the uncertainty estimates are much higher in the
+# bootstrapped estimates, since these are (better) accounting
+# for the covariance between 
+apply(boot_summary, 2, mean)
+apply(boot_summary, 2, sd)
+
+summary(mod)
+```
+
+As noted by Manuele (this was news to me), the "standard" method for calculating standard errors for parameter estimates in OLS, and as it is implemented in lm, actually does deal with impacts of covariance, so long as the model is fully linear. E.g. if you take the example above and simplify the function for $Y$ to make it linear (i.e. $Y = X+Z$), then the standard error estimates from bootstrapping and from the lm function are identical.
+
+
+```{r echo=TRUE, message=FALSE, fig.width=5, fig.height=4}
+plot(Y~I(Z^2))
+
+mod = lm(Y ~ I(X^2)+I(Z^2))
+summary(mod)
+
+niter = 1000
+boot_summary = matrix(nrow = niter, ncol = 2)
+colnames(boot_summary) = c("bX", "bZ")
+
+for(i in 1:niter) {
+  ps = sample(n, rep = T)
+  mod_boot = lm(Y[ps] ~ I(X[ps]^2)+I(Z[ps]^2))
+  boot_summary[i,] = unname(c(coef(mod_boot)[2:3]))
+}
+
+# note the correlation among model terms - i.e.
+# when the slope for X is steep, the slope for Y isn't.
+plot(boot_summary)
+
+mod_boot = lm(bZ~bX, data = data.frame(boot_summary))
+summary(mod_boot)
+abline(mod_boot)
+
+# note, the uncertainty estimates are much higher in the
+# bootstrapped estimates, since these are (better) accounting
+# for the covariance between 
+apply(boot_summary, 2, mean)
+apply(boot_summary, 2, sd)
+
+summary(mod)
+```
+
+This shows that the "real" problem with our initial example was one of definition, rather than functional for. That is, we fit the "wrong" model to the data (by assuming a linear relationship when the relationship was actually quadratic). So long as we are able to find a transformation that coerces the system back into a linear form, though, regular old regression should work fine to identify model paramter mean values and standard errors.
+
+### Informative priors as a solution:
+
+Now, let's try a more extreme example, as suggested by Manuele in his E-Mail. First, imagine that we have two variables that are very strongly correlated with each other, but only one of which ($X$) influences $Y$:
+
+```{r echo=TRUE, message=FALSE, fig.width=5, fig.height=4}
+set.seed(1234)
+n = 50
+
+require(mvtnorm)
+mu = c(0, 0)
+Sig = cbind(c(1, 0.95), c(0.95, 1))
+mvout = rmvnorm(n, mu, Sig)
+
+X = mvout[,1]; Z = mvout[,2]
+plot(X, Z)
+cor(X, Z)
+
+Y = rnorm(n, 0, 1) + X
+
+mod = lm(Y~X + Z)
+summary(mod)
+set.seed(1234)
+n = 50
+
+require(mvtnorm)
+mu = c(0, 0)
+Sig = cbind(c(1, 0.95), c(0.95, 1))
+mvout = rmvnorm(n, mu, Sig)
+
+X = mvout[,1]; Z = mvout[,2]
+plot(X, Z)
+cor(X, Z)
+
+Y = rnorm(n, 0, 1) + X
+```
+
+Now, let's fit a simple linear model with all three variables:
+
+```{r echo=TRUE, message=FALSE, fig.width=5, fig.height=4}
+mod = lm(Y~X + Z)
+summary(mod)
+```
+
+You'll see that we end up with a relatively inaccurate estimate of the model parameters (the standard errors are large). Now, let's imagine that we have some a priori information that leads us to believe that the effect of $Z$ on $Y$ should be somewhere around zero, and the effect of $X$ should be somewhere around 1. We can encode those into our priors in the rethinking package as:
+
+```{r echo=TRUE, fig.width=5, fig.height=4, message=FALSE}
+require(rethinking)
+
+# standardise data
+dat <- list(
+    X = X,
+    Y = Y,
+    Z = Z
+)
+
+m_XYZ <- quap(
+    alist(
+        Y ~ dnorm(mu,sigma),
+        mu <- a + bX*X + bZ*Z,
+        a ~ dnorm(0,2), # priors
+        bX ~ dnorm(1,0.5),
+        bZ ~ dnorm(0,0.5),
+        sigma ~ dexp(1)
+    ) , data=dat )
+
+plot(precis(m_XYZ))
+```
+
+We can do the same thing in brms as well:
+
+```{r echo=TRUE, fig.width=5, fig.height=4, message=FALSE}
+require(brms)
+options(mc.cores = floor(parallel::detectCores()/3)) # set number of cores
+
+p1 = prior(normal(1,0.5), class = b, coef = X)
+p2 = prior(normal(0,0.5), class = b, coef = Z)
+
+m_brms = brm(Y~X+Z, prior = c(p1, p2), data = dat)
+summary(m_brms)
+plot(m_brms)
+```
+
+Lots of different prior structures exist - e.g. we could also try to explicitly model the correlation between $X$ and $Z$, or between their model coefficients. Finally, a very "simple" solution suggested by Gelman (one of the gods of Bayesian inference) is to simply give up, and model the effect of the sum of the correlated variables. This would give us something simple like:
+
+```{r echo=TRUE, message=FALSE, fig.width=5, fig.height=4}
+XpZ = X + Z
+
+mod_ad = lm(Y~XpZ)
+summary(mod_ad)
+```
