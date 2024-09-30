@@ -1,7 +1,7 @@
 ---
 title: "Bayesian Stats, Meeting 0"
 author: "Adam Clark"
-date: "2023-10-03"
+date: "2024-10-01"
 output: html_document
 ---
 
@@ -13,9 +13,9 @@ knitr::opts_chunk$set(echo = TRUE)
 
 I'm very much looking forward to working together this semester in our Bayesian statistics seminar.
 
-Today will just be the "Vorbesprechung" (pre-Semester meeting). For anyone who would has questions about the course or about the semester, we can meet at this [link](https://unimeet.uni-graz.at/b/cla-gru-xu4-48a).
+Today will just be the "Vorbesprechung" (pre-Semester meeting).
 
-Next week, the plan is to meet as usual at 15.30 in seminar room 32.11 (to floor of Holteigasse 6). No preparation is needed for this meeting, but if possible, please bring a laptop with R already installed.
+Next week, the plan is to meet as usual at 15.30 in seminar room 32.11 (top floor of Holteigasse 6). No preparation is needed for this meeting, but if possible, please bring a laptop with R already installed.
 
 Just for basic preparation: we will be using [this](https://www.amazon.de/Richard-Mcelreath/dp/036713991X/ref=mp_s_a_1_1?crid=24ZFNTQV3DKGG&keywords=statistical+rethinking&qid=1696190575&sprefix=statistical%2Caps%2C276&sr=8-1) book as a rough guide for the course.
 
