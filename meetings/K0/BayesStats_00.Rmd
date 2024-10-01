@@ -21,7 +21,7 @@ Just for basic preparation: we will be using [this](https://www.amazon.de/Richar
 
 You don't need to buy the book, though of course feel free to buy a copy of you want to (versions are also available from the Uni Library). I'll always provide all the material that we need for the course separately, though.
 
-In addition to the book, the author also has a really nice collection of YouTube lectures and code resources available [here](https://github.com/rmcelreath/stat_rethinking_2023#calendar--topical-outline).
+In addition to the book, the author also has a really nice collection of YouTube lectures and code resources available [here](https://github.com/rmcelreath/rethinking) and [here](https://www.youtube.com/@rmcelreath).
 
 Note, we will roughly be following the course plan that he suggests over the next ten weeks.
 
