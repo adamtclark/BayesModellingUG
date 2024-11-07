@@ -16,6 +16,7 @@ require(nlme)
 
 # Nested data example
 set.seed(231011) # seed for analyses
+
 error = 10 # residual error
 n_plots = 30 # number of plots
 n_subplots = 6 # subplots per block
@@ -28,13 +29,23 @@ for(i in 1:n_plots) {
 
 head(intercepts_subplots) # look at coefficient matrix
 
-# make fake data
-bdat = data.frame(plot = rep(1:n_plots, each = n_subplots),
-                  subplot = 1:n_subplots,
-                  biomass = NA)
 
-bdat$biomass = intercepts_subplots[cbind(bdat$plot, bdat$subplot)] + rnorm(n_plots*n_subplots, 0, error)
+
+
+bdat = NULL
+for(j in 1:2) {
+  # make fake data
+  bdat_tmp = data.frame(plot = rep(1:n_plots, each = n_subplots),
+                    subplot = 1:n_subplots,
+                    biomass = NA)
+  
+  bdat_tmp$biomass = intercepts_subplots[cbind(bdat_tmp$plot, bdat_tmp$subplot)] + rnorm(n_plots*n_subplots, 0, error)
+  
+  bdat = rbind(bdat, bdat_tmp)
+}
 ```
+
+The result is a dataset of length 360 - i.e. two observations from each of 6 subplots in each of 30 plots (30x6x2 = 360).
 
 Now, let's first go ahead and fit *just* a model of plot-level effects. Before reading the code below, try writing out a version of this model yourself.
 
@@ -82,7 +93,7 @@ anova(ML_mmod, ML_mmod2)
 The p-value is less than 0.05 - this suggests that the more complex model - mmod2 - adds significant explanatory power - i.e. that there is structuring of residuals at the subplot level (which we already knew since we simulated the data that way). Note that if we try to do the same analysis, but with some random extra variable that we know has no influence of the data:
   
 ```{r echo=TRUE}
-bdat$fake_subplot = sample(1:50, n_plots*n_subplots, replace = TRUE)
+bdat$fake_subplot = sample(1:50, n_plots*n_subplots*2, replace = TRUE)
 
 ML_mmod3 = lme(biomass ~ 1, data = bdat, random = ~1|plot/fake_subplot, method = "ML")
 

@@ -37,3 +37,15 @@ fixef(mod)
 ranef(mod)
 
 VarCorr(mod)
+
+
+mod0 <- lme(biomass ~ diversity,
+           random = ~ 1 + diversity | block, data = bdat)
+mod1 <- lme(biomass ~ diversity,
+           random = ~ 1 | block, data = bdat)
+mod2 <- gls(biomass ~ diversity,
+            data = bdat)
+
+anova(mod0, mod1)
+anova(mod1, mod2)
+

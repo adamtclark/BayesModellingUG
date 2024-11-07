@@ -368,6 +368,7 @@ across these different levels.</p>
 <pre><code>## Loading required package: nlme</code></pre>
 <pre class="r"><code># Nested data example
 set.seed(231011) # seed for analyses
+
 error = 10 # residual error
 n_plots = 30 # number of plots
 n_subplots = 6 # subplots per block
@@ -386,12 +387,19 @@ head(intercepts_subplots) # look at coefficient matrix</code></pre>
 ## [4,] 161.75433 153.1631 153.5505 177.32083 171.6685 144.05632
 ## [5,] 126.80925 136.9765 180.8973  99.78658 137.9795 149.41674
 ## [6,] 130.39626 135.8423 160.1018 164.90091 139.6939 133.25399</code></pre>
-<pre class="r"><code># make fake data
-bdat = data.frame(plot = rep(1:n_plots, each = n_subplots),
-                  subplot = 1:n_subplots,
-                  biomass = NA)
-
-bdat$biomass = intercepts_subplots[cbind(bdat$plot, bdat$subplot)] + rnorm(n_plots*n_subplots, 0, error)</code></pre>
+<pre class="r"><code>bdat = NULL
+for(j in 1:2) {
+  # make fake data
+  bdat_tmp = data.frame(plot = rep(1:n_plots, each = n_subplots),
+                    subplot = 1:n_subplots,
+                    biomass = NA)
+  
+  bdat_tmp$biomass = intercepts_subplots[cbind(bdat_tmp$plot, bdat_tmp$subplot)] + rnorm(n_plots*n_subplots, 0, error)
+  
+  bdat = rbind(bdat, bdat_tmp)
+}</code></pre>
+<p>The result is a dataset of length 360 - i.e. two observations from
+each of 6 subplots in each of 30 plots (30x6x2 = 360).</p>
 <p>Now, let’s first go ahead and fit <em>just</em> a model of plot-level
 effects. Before reading the code below, try writing out a version of
 this model yourself.</p>
@@ -410,22 +418,22 @@ summary(mmod)</code></pre>
 <pre><code>## Linear mixed-effects model fit by REML
 ##   Data: bdat 
 ##        AIC      BIC    logLik
-##   1722.685 1732.247 -858.3426
+##   3325.691 3337.341 -1659.846
 ## 
 ## Random effects:
 ##  Formula: ~1 | plot
 ##         (Intercept) Residual
-## StdDev:     42.8792  22.3672
+## StdDev:    43.47775 20.81692
 ## 
 ## Fixed effects:  biomass ~ 1 
 ##                Value Std.Error  DF  t-value p-value
-## (Intercept) 198.6205  8.004181 150 24.81459       0
+## (Intercept) 198.6883  8.013377 330 24.79457       0
 ## 
 ## Standardized Within-Group Residuals:
 ##         Min          Q1         Med          Q3         Max 
-## -2.44763009 -0.55420750  0.06242865  0.61997009  2.31629660 
+## -2.63787504 -0.62671581  0.02218755  0.61874608  2.57184655 
 ## 
-## Number of Observations: 180
+## Number of Observations: 360
 ## Number of Groups: 30</code></pre>
 <p>To fit a nested model that also includes subplot-level effects, we
 simply add another argument to the random effect term:</p>
@@ -436,26 +444,26 @@ summary(mmod2)</code></pre>
 <pre><code>## Linear mixed-effects model fit by REML
 ##   Data: bdat 
 ##        AIC      BIC    logLik
-##   1724.685 1737.435 -858.3426
+##   3172.637 3188.171 -1582.319
 ## 
 ## Random effects:
 ##  Formula: ~1 | plot
 ##         (Intercept)
-## StdDev:     42.8792
+## StdDev:    43.10078
 ## 
 ##  Formula: ~1 | subplot %in% plot
 ##         (Intercept) Residual
-## StdDev:    19.83772  10.3323
+## StdDev:    18.94391  10.3488
 ## 
 ## Fixed effects:  biomass ~ 1 
 ##                Value Std.Error  DF  t-value p-value
-## (Intercept) 198.6205  8.004181 150 24.81459       0
+## (Intercept) 198.6883  8.013351 180 24.79465       0
 ## 
 ## Standardized Within-Group Residuals:
-##         Min          Q1         Med          Q3         Max 
-## -1.13065766 -0.25601048  0.02883828  0.28638884  1.06998950 
+##        Min         Q1        Med         Q3        Max 
+## -2.5422769 -0.4605163 -0.0159189  0.4670517  2.3753279 
 ## 
-## Number of Observations: 180
+## Number of Observations: 360
 ## Number of Groups: 
 ##              plot subplot %in% plot 
 ##                30               180</code></pre>
@@ -466,13 +474,13 @@ should be 20 (based on the standard deviations in the script above).</p>
 <pre class="r"><code>VarCorr(mmod2)</code></pre>
 <pre><code>##             Variance     StdDev  
 ## plot =      pdLogChol(1)         
-## (Intercept) 1838.6254    42.87920
+## (Intercept) 1857.6771    43.10078
 ## subplot =   pdLogChol(1)         
-## (Intercept)  393.5351    19.83772
-## Residual     106.7564    10.33230</code></pre>
+## (Intercept)  358.8718    18.94391
+## Residual     107.0977    10.34880</code></pre>
 <pre class="r"><code>VarCorr(mmod2)[,2] # look at standard deviations</code></pre>
 <pre><code>##      plot = (Intercept)   subplot = (Intercept)    Residual 
-##          &quot;&quot;  &quot;42.87920&quot;          &quot;&quot;  &quot;19.83772&quot;  &quot;10.33230&quot;</code></pre>
+##          &quot;&quot;  &quot;43.10078&quot;          &quot;&quot;  &quot;18.94391&quot;  &quot;10.34880&quot;</code></pre>
 <p>Note, we are close, but not exactly there (we’ve under-estimated
 subplot-level and residual-level variability). See notes below for a
 breif explanation of this point. Among other things, note that we have
@@ -497,24 +505,24 @@ ML_mmod2 = update(mmod2, method = &quot;ML&quot;)
 
 # run ANOVA
 anova(ML_mmod, ML_mmod2)</code></pre>
-<pre><code>##          Model df      AIC      BIC   logLik   Test L.Ratio p-value
-## ML_mmod      1  3 1728.666 1738.245 -861.333                       
-## ML_mmod2     2  4 1730.666 1743.438 -861.333 1 vs 2       0       1</code></pre>
+<pre><code>##          Model df      AIC      BIC    logLik   Test  L.Ratio p-value
+## ML_mmod      1  3 3331.674 3343.333 -1662.837                        
+## ML_mmod2     2  4 3178.620 3194.165 -1585.310 1 vs 2 155.0537  &lt;.0001</code></pre>
 <p>The p-value is less than 0.05 - this suggests that the more complex
 model - mmod2 - adds significant explanatory power - i.e. that there is
 structuring of residuals at the subplot level (which we already knew
 since we simulated the data that way). Note that if we try to do the
 same analysis, but with some random extra variable that we know has no
 influence of the data:</p>
-<pre class="r"><code>bdat$fake_subplot = sample(1:50, n_plots*n_subplots, replace = TRUE)
+<pre class="r"><code>bdat$fake_subplot = sample(1:50, n_plots*n_subplots*2, replace = TRUE)
 
 ML_mmod3 = lme(biomass ~ 1, data = bdat, random = ~1|plot/fake_subplot, method = &quot;ML&quot;)
 
 # run ANOVA
 anova(ML_mmod, ML_mmod3)</code></pre>
-<pre><code>##          Model df      AIC      BIC    logLik   Test  L.Ratio p-value
-## ML_mmod      1  3 1728.666 1738.245 -861.3330                        
-## ML_mmod3     2  4 1726.586 1739.358 -859.2928 1 vs 2 4.080377  0.0434</code></pre>
+<pre><code>##          Model df      AIC      BIC    logLik   Test      L.Ratio p-value
+## ML_mmod      1  3 3331.674 3343.333 -1662.837                            
+## ML_mmod3     2  4 3333.674 3349.219 -1662.837 1 vs 2 3.967616e-07  0.9995</code></pre>
 <p>we end up with p &gt; 0.05 - i.e. the test tells us that there is no
 significant addition of information value to the model based on the
 additional fake_subplot data (which is encouraging…).</p>
@@ -525,26 +533,26 @@ summary(mmod2)</code></pre>
 <pre><code>## Linear mixed-effects model fit by REML
 ##   Data: bdat 
 ##        AIC      BIC    logLik
-##   1724.685 1737.435 -858.3426
+##   3172.637 3188.171 -1582.319
 ## 
 ## Random effects:
 ##  Formula: ~1 | plot
 ##         (Intercept)
-## StdDev:     42.8792
+## StdDev:    43.10078
 ## 
 ##  Formula: ~1 | subplot %in% plot
 ##         (Intercept) Residual
-## StdDev:    19.83772  10.3323
+## StdDev:    18.94391  10.3488
 ## 
 ## Fixed effects:  biomass ~ 1 
 ##                Value Std.Error  DF  t-value p-value
-## (Intercept) 198.6205  8.004181 150 24.81459       0
+## (Intercept) 198.6883  8.013351 180 24.79465       0
 ## 
 ## Standardized Within-Group Residuals:
-##         Min          Q1         Med          Q3         Max 
-## -1.13065766 -0.25601048  0.02883828  0.28638884  1.06998950 
+##        Min         Q1        Med         Q3        Max 
+## -2.5422769 -0.4605163 -0.0159189  0.4670517  2.3753279 
 ## 
-## Number of Observations: 180
+## Number of Observations: 360
 ## Number of Groups: 
 ##              plot subplot %in% plot 
 ##                30               180</code></pre>
