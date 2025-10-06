@@ -15,7 +15,7 @@ I'm very much looking forward to working together this semester in our Bayesian 
 
 Today will just be the "Vorbesprechung" (pre-Semester meeting).
 
-Next week, the plan is to meet as usual at 15.30 in seminar room 32.11 (top floor of Holteigasse 6). No preparation is needed for this meeting, but if possible, please bring a laptop with R already installed.
+Our in-person meeting times will be 14.15-16.15 on 6.10, 27.10, 3.11, 10.11, 17.11, and 1.12. After that, we will book online office hours for January to work together on your final projects.
 
 Just for basic preparation: we will be using [this](https://www.amazon.de/Richard-Mcelreath/dp/036713991X/ref=mp_s_a_1_1?crid=24ZFNTQV3DKGG&keywords=statistical+rethinking&qid=1696190575&sprefix=statistical%2Caps%2C276&sr=8-1) book as a rough guide for the course.
 
