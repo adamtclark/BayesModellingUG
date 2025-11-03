@@ -24,15 +24,9 @@ for(i in 1:niter) {
   
   require(nlme)
   
-  mod = lme(y~x, random = ~1|block, dat)
+  #mod = lme(y~x, random = ~1|block, dat)
   #plot(int, ranef(mod)$`(Intercept)`)
   #abline(a=0,b=1,lty=2)
-  datout$sd_randeff[i] = sd(ranef(mod)$`(Intercept)`)
-  datout$sd_true[i] = sd(int)
-  
-  # badly specified random effect
-  #plot(int[dat$block], dat$x)
-  cov(int[dat$block], dat$x)
   
   mod = "error"
   mod = try(
@@ -40,13 +34,20 @@ for(i in 1:niter) {
     , silent = TRUE)
   if(!is.character(mod)) {
     datout$fixef[i] = fixef(mod)[2]
+    
+    datout$sd_randeff[i] = sd(ranef(mod)$`(Intercept)`)
+    datout$sd_true[i] = sd(int)
+    
+    # badly specified random effect
+    #plot(int[dat$block], dat$x)
+    cov(int[dat$block], dat$x)
   }
   if(i/100 == floor(i/100))
     print(i/niter)
 }
 
 hist(datout$sd_randeff, breaks = 20); abline(v=sd_randef, lty=2, lwd = 2, col = 2)
-abline(v=mean(datout$sd_randeff), col = "blue", lwd = 2, lty=2)
+abline(v=mean(datout$sd_randeff,na.rm=TRUE), col = "blue", lwd = 2, lty=2)
 
 #hist(datout$sd_true, breaks = 20); abline(v=sd_randef, lty=2, lwd = 2, col = 2)
 #abline(v=mean(datout$sd_true), col = "blue", lwd = 2, lty=2)
