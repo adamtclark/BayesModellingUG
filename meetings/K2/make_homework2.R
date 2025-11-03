@@ -17,7 +17,7 @@ write.csv(bdat, "dataset_2.csv", row.names = FALSE)
 # plot
 par(mar=c(4,4,2,2))
 plot(biomass~diversity, col = block, data = bdat)
-for(i in 1:6) {
+for(i in 1:10) {
   if(i==3) {
     abline(intercepts[i], slopes, col = i, lty=2)
   } else {
