@@ -2,6 +2,8 @@
 set.seed(231107)
 n_blocks = 10
 
+collst = rainbow(n_blocks)
+
 intercepts = rnorm(n_blocks, 14, 7)
 slopes = 5
 error = 5
@@ -16,12 +18,12 @@ write.csv(bdat, "dataset_2.csv", row.names = FALSE)
 
 # plot
 par(mar=c(4,4,2,2))
-plot(biomass~diversity, col = block, data = bdat)
+plot(biomass~diversity, col = collst[block], data = bdat)
 for(i in 1:10) {
   if(i==3) {
-    abline(intercepts[i], slopes, col = i, lty=2)
+    abline(intercepts[i], slopes, col = collst[i], lty=2)
   } else {
-    abline(intercepts[i], slopes, col = i)
+    abline(intercepts[i], slopes, col = collst[i])
   }
 }
 

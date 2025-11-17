@@ -1,7 +1,7 @@
 ---
 title: "Bayesian Stats, Meeting 3"
 author: "Adam Clark"
-date: "2024-31-10"
+date: "2025-11-03"
 output: html_document
 ---
   
